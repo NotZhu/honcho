@@ -860,6 +860,12 @@ class QueueItem(Base):
             "processed",
             "id",
         ),
+        Index(
+            "ix_queue_pending_work_unit_created_at",
+            "work_unit_key",
+            "created_at",
+            postgresql_where=text("NOT processed"),
+        ),
         # Partial unique index for reconciler task deduplication
         Index(
             "uq_queue_reconciler_pending_work_unit_key",
