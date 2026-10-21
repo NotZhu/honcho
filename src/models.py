@@ -527,6 +527,18 @@ class MessageEmbedding(Base):
         # (sync_state='pending' over all tenants), so a tenant_id prefix wouldn't
         # help. (Also drops the redundant single-column sync_state index.)
         # endregion
+        # region ai
+        # The reconciler's claim orders by last_sync_at NULLS FIRST under a
+        # pending-only predicate. A plain btree is ASC NULLS LAST and cannot
+        # satisfy that ordering, so without the explicit NULLS FIRST the plan
+        # degrades from Merge Append to a Sort over every partition and the
+        # LIMIT stops being able to stop early. See the migration for numbers.
+        # endregion
+        Index(
+            "ix_message_embeddings_pending_claim",
+            text("last_sync_at NULLS FIRST"),
+            postgresql_where=text("sync_state = 'pending'"),
+        ),
         Index(
             "ix_message_embeddings_sync_state_last_sync_at",
             "sync_state",
@@ -772,6 +784,18 @@ class Document(Base):
         # Reconciler scans this cross-tenant (sync_state='pending'), so NOT
         # tenant_id-leading. Also drops the redundant single-column sync_state index.
         # endregion
+        # region ai
+        # The reconciler's claim orders by last_sync_at NULLS FIRST under a
+        # pending-only predicate. A plain btree is ASC NULLS LAST and cannot
+        # satisfy that ordering, so without the explicit NULLS FIRST the plan
+        # degrades from Merge Append to a Sort over every partition and the
+        # LIMIT stops being able to stop early. See the migration for numbers.
+        # endregion
+        Index(
+            "ix_documents_pending_claim",
+            text("last_sync_at NULLS FIRST"),
+            postgresql_where=text("sync_state = 'pending'"),
+        ),
         Index(
             "ix_documents_sync_state_last_sync_at",
             "sync_state",
